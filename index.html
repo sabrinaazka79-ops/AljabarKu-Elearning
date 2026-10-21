@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AljabarKu — E-Learning Matematika Aljabar</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -277,7 +278,9 @@ tbody tr:hover{background:var(--surface-2)}
    AljabarKu — E-Learning Matematika Aljabar
    Peran: Admin · Guru · Siswa
    ======================================================================= */
-
+const SUPABASE_URL = 'https://ditwulwoqprvrdkcxdpk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpdHd1bHdvcXBydnJka2N4ZHBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1MDEzNzMsImV4cCI6MjEwODA3NzM3M30.ZhZ3zVAjNzU2kg5iU5_u1nJRhQlmSN99-wnYwgxyXcA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ---------------- util ---------------- */
 const $ = (s, r=document) => r.querySelector(s);
 const uid = p => p + '-' + Math.random().toString(36).slice(2,8);
@@ -739,7 +742,7 @@ function isiView(){
 }
 function pasangShell(){
   document.querySelectorAll('[data-nav]').forEach(b=> b.onclick = ()=>{ S.view=b.dataset.nav; S.tmp={}; S.sidebar=false; render(); window.scrollTo(0,0); });
-  const lo=$('[data-logout]'); if(lo) lo.onclick=()=>{ S.user=null; S.view=null; render(); };
+  const lo=$('[data-logout]'); if(lo) lo.onclick=async ()=>{ await sb.auth.signOut(); S.user=null; S.view=null; render(); };
   const gp=$('[data-gantipw]'); if(gp) gp.onclick=()=> formGantiPassword();
   const sd=$('[data-side]'); if(sd) sd.onclick=()=>{ S.sidebar=!S.sidebar; render(); };
   const sc=$('[data-close-side]'); if(sc) sc.onclick=()=>{ S.sidebar=false; render(); };
@@ -781,31 +784,20 @@ function viewLogin(){
       <div class="login-card">
         <h2 style="font-size:22px;font-weight:800;margin-bottom:5px">Masuk ke e-learning</h2>
         <p style="color:var(--text-3);font-size:13.5px;margin-bottom:20px">Pilih peran untuk mencoba, lalu klik Masuk.</p>
-        <div class="role-pick" id="rolePick">
-          ${[['admin','🔐','Administrator','Kelola akun, kelas, dan hak akses'],
-             ['guru','👩‍🏫','Guru','Kelola materi, LKPD, penilaian, dan pemantauan'],
-             ['siswa','🎒','Siswa','Belajar materi, kerjakan LKPD dan evaluasi']]
-            .map(([r,i,t,d])=>`<button class="role-btn ${r==='siswa'?'on':''}" data-role="${r}">
-              <span class="ic">${i}</span><span><span class="t">${t}</span><span class="d" style="display:block">${d}</span></span></button>`).join('')}
-        </div>
-        <div class="field" style="margin-top:16px">
-          <label for="akunSel">Akun</label>
-          <select id="akunSel"></select>
-        </div>
-        <div class="field">
-          <label for="pw">Kata sandi</label>
-          <div style="position:relative">
-            <input type="password" id="pw" value="" autocomplete="current-password" placeholder="Masukkan kata sandi" style="padding-right:42px">
-            <button type="button" class="btn-ghost" data-mata="pw" style="position:absolute;right:2px;top:2px;bottom:2px;width:38px;border:0;background:none;cursor:pointer;font-size:16px" title="Lihat/sembunyikan kata sandi">👁</button>
-          </div>
-          <span class="hint">Kata sandi dibuat oleh admin. Sudah pernah masuk? Ganti kata sandi lewat menu di sidebar.</span>
-        </div>
-        <div id="loginErr" style="color:var(--bad);font-size:12.5px;font-weight:600;margin:-4px 0 10px;display:none"></div>
-        <button class="btn btn-primary btn-block" id="btnMasuk" style="padding:12px">Masuk</button>
-        <p style="font-size:12px;color:var(--text-3);text-align:center;margin-top:14px">
-          Akun nonaktif tidak dapat masuk — silakan hubungi administrator.</p>
-        <button type="button" id="toggleDemo" style="display:block;margin:14px auto 0;background:none;border:0;color:var(--text-3);font-size:11.5px;text-decoration:underline;cursor:pointer">Lihat kredensial percobaan (khusus demo)</button>
-        <div id="demoBox" style="display:none;margin-top:10px;border:1px dashed var(--border-strong);border-radius:10px;padding:10px 12px;font-size:11.8px;color:var(--text-2)"></div>
+   <div class="field" style="margin-top:6px">
+  <label for="em">Email</label>
+  <input type="email" id="em" autocomplete="username" placeholder="nama@email.com">
+</div>
+<div class="field">
+  <label for="pw">Kata sandi</label>
+  <div style="position:relative">
+    <input type="password" id="pw" autocomplete="current-password" placeholder="Masukkan kata sandi" style="padding-right:42px">
+    <button type="button" class="btn-ghost" data-mata="pw" style="position:absolute;right:2px;top:2px;bottom:2px;width:38px;border:0;background:none;cursor:pointer;font-size:16px">👁</button>
+  </div>
+  <span class="hint">Akun dibuat oleh admin. Lupa kata sandi? Hubungi admin.</span>
+</div>
+<div id="loginErr" style="color:var(--bad);font-size:12.5px;font-weight:600;margin:-4px 0 10px;display:none"></div>
+<button class="btn btn-primary btn-block" id="btnMasuk" style="padding:12px">Masuk</button>
       </div>
     </div>
   </div>`;
@@ -821,44 +813,32 @@ function pasangToggleMata(root){
     };
   });
 }
-function pasangLogin(){
-  let role='siswa';
-  const isiAkun = ()=>{
-    const sel=$('#akunSel');
-    sel.innerHTML = DB.users.filter(u=>u.role===role)
-      .map(u=>`<option value="${u.id}">${esc(u.nama)} — ${esc(u.email)}${u.status==='nonaktif'?' (nonaktif)':''}</option>`).join('');
-  };
-  isiAkun();
-  pasangToggleMata();
-  document.querySelectorAll('[data-role]').forEach(b=> b.onclick=()=>{
-    role=b.dataset.role;
-    document.querySelectorAll('[data-role]').forEach(x=>x.classList.toggle('on', x===b));
-    isiAkun();
-  });
-  $('#toggleDemo').onclick=()=>{
-    const box=$('#demoBox');
-    if(box.style.display==='none'){
-      box.innerHTML = '<b>Kredensial demo</b> (hapus akses ini pada penggunaan sungguhan):<br>'+
-        DB.users.map(u=>esc(u.email)+' — <span class="mono">'+esc(u.password)+'</span>'+(u.status==='nonaktif'?' (nonaktif)':'')).join('<br>');
-      box.style.display='block'; $('#toggleDemo').textContent='Sembunyikan kredensial percobaan';
-    } else { box.style.display='none'; $('#toggleDemo').textContent='Lihat kredensial percobaan (khusus demo)'; }
-  };
-  $('#btnMasuk').onclick = ()=>{
-    const u = userById($('#akunSel').value);
-    const err=$('#loginErr');
-    err.style.display='none';
-    if(!u) return;
-    if(u.status==='nonaktif'){ err.textContent='Akun ini dinonaktifkan oleh administrator.'; err.style.display='block'; return; }
-    const isi=$('#pw').value;
-    if(!isi){ err.textContent='Kata sandi wajib diisi.'; err.style.display='block'; return; }
-    if(isi!==u.password){ err.textContent='Kata sandi salah. Periksa kembali atau hubungi admin.'; err.style.display='block'; return; }
-    u.masuk = new Date().toISOString();
-    u.jmlMasuk = (u.jmlMasuk||0)+1;
-    S.user=u; S.view=null; catat('Masuk','Login sebagai '+u.role+' dari peramban'); simpan(); render();
-    toast('Selamat datang, '+u.nama.split(' ')[0]+'!','ok');
-  };
+async function muatProfil(authId){
+  const {data:p, error} = await sb.from('profiles').select('*').eq('id', authId).single();
+  if(error || !p){ await sb.auth.signOut(); return {galat:'Profil akun tidak ditemukan. Hubungi administrator.'}; }
+  if(p.status === 'nonaktif'){ await sb.auth.signOut(); return {galat:'Akun ini dinonaktifkan oleh administrator.'}; }
+  return {user:{id:p.id, nama:p.nama, email:p.email, role:p.role, status:p.status, nip:p.nip||'-'}};
 }
 
+function pasangLogin(){
+  pasangToggleMata();
+  const tampilGalat = t => { const e=$('#loginErr'); e.textContent=t; e.style.display='block'; };
+  const masuk = async ()=>{
+    $('#loginErr').style.display='none';
+    const email=$('#em').value.trim(), pw=$('#pw').value;
+    if(!email || !pw){ tampilGalat('Email dan kata sandi wajib diisi.'); return; }
+    const btn=$('#btnMasuk'); btn.disabled=true; btn.textContent='Memeriksa…';
+    const {data, error} = await sb.auth.signInWithPassword({email, password:pw});
+    if(error){ tampilGalat('Email atau kata sandi salah.'); btn.disabled=false; btn.textContent='Masuk'; return; }
+    const r = await muatProfil(data.user.id);
+    if(r.galat){ tampilGalat(r.galat); btn.disabled=false; btn.textContent='Masuk'; return; }
+    S.user = r.user; S.view = null; render();
+    toast('Selamat datang, '+r.user.nama.split(' ')[0]+'!','ok');
+  };
+  $('#btnMasuk').onclick = masuk;
+  $('#pw').onkeydown = e=>{ if(e.key==='Enter') masuk(); };
+  $('#em').onkeydown = e=>{ if(e.key==='Enter') masuk(); };
+}
 /* =======================================================================
    MODAL
    ======================================================================= */
@@ -3242,7 +3222,11 @@ function contohKiriman(){
 try{ const t=localStorage.getItem('aljabarku-tema'); if(t) document.documentElement.setAttribute('data-theme',t); }catch(e){}
 muat();
 if(!Object.keys(DB.kiriman).length){ contohKiriman(); simpan(); }
-render();
+(async ()=>{
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){ const r = await muatProfil(session.user.id); if(r.user) S.user = r.user; }
+  render();
+})();
 </script>
 </body>
 </html>
