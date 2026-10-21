@@ -783,8 +783,15 @@ function viewLogin(){
     <div class="login-form">
       <div class="login-card">
         <h2 style="font-size:22px;font-weight:800;margin-bottom:5px">Masuk ke e-learning</h2>
-        <p style="color:var(--text-3);font-size:13.5px;margin-bottom:20px">Pilih peran untuk mencoba, lalu klik Masuk.</p>
-   <div class="field" style="margin-top:6px">
+        <p style="color:var(--text-3);font-size:13.5px;margin-bottom:20px">Pilih peran, lalu masuk dengan akunmu.</p>
+        <div class="role-pick" id="rolePick">
+  ${[['admin','🔐','Administrator','Kelola akun, kelas, dan hak akses'],
+     ['guru','👩‍🏫','Guru','Kelola materi, LKPD, penilaian, dan pemantauan'],
+     ['siswa','🎒','Siswa','Belajar materi, kerjakan LKPD dan evaluasi']]
+    .map(([r,i,t,d])=>`<button type="button" class="role-btn ${r==='siswa'?'on':''}" data-role="${r}">
+      <span class="ic">${i}</span><span><span class="t">${t}</span><span class="d" style="display:block">${d}</span></span></button>`).join('')}
+</div>
+   <div class="field" style="margin-top:16px">
   <label for="em">Email</label>
   <input type="email" id="em" autocomplete="username" placeholder="nama@email.com">
 </div>
@@ -821,20 +828,37 @@ async function muatProfil(authId){
 }
 
 function pasangLogin(){
+  let role='siswa';
   pasangToggleMata();
+  document.querySelectorAll('[data-role]').forEach(b=> b.onclick=()=>{
+    role=b.dataset.role;
+    document.querySelectorAll('[data-role]').forEach(x=>x.classList.toggle('on', x===b));
+  });
   const tampilGalat = t => { const e=$('#loginErr'); e.textContent=t; e.style.display='block'; };
   const masuk = async ()=>{
     $('#loginErr').style.display='none';
     const email=$('#em').value.trim(), pw=$('#pw').value;
     if(!email || !pw){ tampilGalat('Email dan kata sandi wajib diisi.'); return; }
     const btn=$('#btnMasuk'); btn.disabled=true; btn.textContent='Memeriksa…';
+    const pulih=()=>{ btn.disabled=false; btn.textContent='Masuk'; };
     const {data, error} = await sb.auth.signInWithPassword({email, password:pw});
-    if(error){ tampilGalat('Email atau kata sandi salah.'); btn.disabled=false; btn.textContent='Masuk'; return; }
+    if(error){
+      tampilGalat(/confirm/i.test(error.message)? 'Email akun ini belum dikonfirmasi.' : 'Email atau kata sandi salah.');
+      console.error('Login gagal:', error.message); pulih(); return;
+    }
     const r = await muatProfil(data.user.id);
-    if(r.galat){ tampilGalat(r.galat); btn.disabled=false; btn.textContent='Masuk'; return; }
+    if(r.galat){ tampilGalat(r.galat); pulih(); return; }
+    if(r.user.role!==role){
+      await sb.auth.signOut();
+      tampilGalat('Akun ini terdaftar sebagai '+r.user.role+', bukan '+role+'. Pilih peran yang sesuai.'); pulih(); return;
+    }
     S.user = r.user; S.view = null; render();
     toast('Selamat datang, '+r.user.nama.split(' ')[0]+'!','ok');
   };
+  $('#btnMasuk').onclick = masuk;
+  $('#pw').onkeydown = e=>{ if(e.key==='Enter') masuk(); };
+  $('#em').onkeydown = e=>{ if(e.key==='Enter') masuk(); };
+}
   $('#btnMasuk').onclick = masuk;
   $('#pw').onkeydown = e=>{ if(e.key==='Enter') masuk(); };
   $('#em').onkeydown = e=>{ if(e.key==='Enter') masuk(); };
